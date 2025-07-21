@@ -17,6 +17,15 @@ npm install
 npm run compile
 ```
 
+## Local Install
+
+```bash
+npm install -g vsce
+vsce package
+```
+
+Install the extension by clicking "Install from VSIX...".
+
 ## Functionality
 
 It's pretty simple open up a `Markdown` file and the status bar will have an auto-updating wordcount in it...

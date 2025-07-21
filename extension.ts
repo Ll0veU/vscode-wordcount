@@ -42,11 +42,30 @@ export class WordCounter {
 
         // Only update status if an MD file
         if (doc.languageId === "markdown") {
-            let totalWords = this._getWholeWordCount(doc);
-            let selectionWords = this._getSelectionWordCount(editor);
-            let text = selectionWords > 0
-                ? `$(pencil) ${selectionWords} Words`
-                : `$(pencil) ${totalWords} Words`;
+            let total = this._countAll(doc.getText());
+            let selection = editor.selection && !editor.selection.isEmpty
+                ? this._countAll(editor.document.getText(editor.selection))
+                : null;
+            let format = (c: { en: number, ch: number, emoji: number }) => {
+                const parts = [];
+                var hasWord = false;
+                if (c.en > 0) {
+                    hasWord = true;
+                    parts.push(`En: ${c.en}`);
+                }
+                if (c.ch > 0) {
+                    hasWord = true;
+                    parts.push(`Ch: ${c.ch}`);
+                }
+                if (c.emoji > 0) {
+                    hasWord = true;
+                    parts.push(`Emoji: ${c.emoji}`);
+                }
+                return hasWord ? parts.join('; ') + ' (Word)' : '0 Word';
+            };
+            let text = selection
+                ? `$(pencil) ${format(selection)}`
+                : `$(pencil) ${format(total)}`;
             this._statusBarItem.text = text;
             this._statusBarItem.show();
         } else {
@@ -54,29 +73,33 @@ export class WordCounter {
         }
     }
 
-    private _countWords(text: string): number {
+    /**
+     * Statistics of English word count, Chinese character count, and emoji count
+     */
+    private _countAll(text: string): { en: number, ch: number, emoji: number } {
+        // Remove HTML tags and extra whitespace
         text = text.replace(/(< ([^>]+)<)/g, '').replace(/\s+/g, ' ');
         text = text.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-        if (text !== "") {
-            return text.split(" ").length;
-        }
-        return 0;
+        // English words
+        const en = (text.match(/[a-zA-Z0-9_\-']+/g) || []).length;
+        // Chinese characters (including Han characters, Japanese Kanji, some CJK and common Chinese punctuation)
+        const ch = (text.match(/[\u4e00-\u9fa5\u3400-\u4dbf\uF900-\uFAFF\u3000-\u303F\uff00-\uffef]/g) || []).length;
+        // emoji (common emoji range, supports most emojis)
+        const emoji = (text.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || []).length;
+        return { en, ch, emoji };
     }
 
     public _getSelectionWordCount(editor: typeof window.activeTextEditor): number {
-        if (!editor) {
-            return 0;
-        }
+        if (!editor) return 0;
         let selection = editor.selection;
         if (selection && !selection.isEmpty) {
-            let selectedText = editor.document.getText(selection);
-            return this._countWords(selectedText);
+            return this._countAll(editor.document.getText(selection)).en;
         }
         return 0;
     }
 
     public _getWholeWordCount(doc: TextDocument): number {
-        return this._countWords(doc.getText());
+        return this._countAll(doc.getText()).en;
     }
 
     public dispose() {
