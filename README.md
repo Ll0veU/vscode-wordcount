@@ -8,6 +8,15 @@ This is a simple extension that illustrates a number of concepts when it comes t
 * Adding a test to your extension
 * Marking up the `package.json` so the gallery looks good
 
+## Developing Environment
+
+```bash
+nvm install 20.12.2
+nvm use 20.12.2
+npm install
+npm run compile
+```
+
 ## Functionality
 
 It's pretty simple open up a `Markdown` file and the status bar will have an auto-updating wordcount in it...

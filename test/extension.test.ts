@@ -16,11 +16,11 @@ import * as myExtension from '../extension';
 suite("Word Count Tests", () => {
 
 	// Defines a Mocha unit test
-	test("Word Count", (done) => {
+	test("Word Count", (done: any) => {
 		let testWordCounter = new myExtension.WordCounter();
 
 		vscode.workspace.openTextDocument(path.join(__dirname, '..', '..', 'vsc-extension-quickstart.md')).then((document) => {
-			assert.equal(testWordCounter._getWordCount(document), 254);
+			assert.equal(testWordCounter._getWholeWordCount(document), 254);
 			done();
 		}, (error) => {
 			assert.fail(error);

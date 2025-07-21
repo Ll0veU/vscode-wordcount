@@ -22,7 +22,7 @@ export function activate(ctx: ExtensionContext) {
 
 export class WordCounter {
 
-    private _statusBarItem: StatusBarItem;
+    private _statusBarItem!: StatusBarItem;
 
     public updateWordCount() {
         
@@ -42,28 +42,41 @@ export class WordCounter {
 
         // Only update status if an MD file
         if (doc.languageId === "markdown") {
-            let wordCount = this._getWordCount(doc);
-
-            // Update the status bar
-            this._statusBarItem.text = wordCount !== 1 ? `$(pencil) ${wordCount} Words` : '$(pencil) 1 Word';
+            let totalWords = this._getWholeWordCount(doc);
+            let selectionWords = this._getSelectionWordCount(editor);
+            let text = selectionWords > 0
+                ? `$(pencil) ${selectionWords} Words`
+                : `$(pencil) ${totalWords} Words`;
+            this._statusBarItem.text = text;
             this._statusBarItem.show();
         } else {
             this._statusBarItem.hide();
         }
     }
 
-    public _getWordCount(doc: TextDocument): number {
-        let docContent = doc.getText();
-
-        // Parse out unwanted whitespace so the split is accurate
-        docContent = docContent.replace(/(< ([^>]+)<)/g, '').replace(/\s+/g, ' ');
-        docContent = docContent.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-        let wordCount = 0;
-        if (docContent != "") {
-            wordCount = docContent.split(" ").length;
+    private _countWords(text: string): number {
+        text = text.replace(/(< ([^>]+)<)/g, '').replace(/\s+/g, ' ');
+        text = text.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+        if (text !== "") {
+            return text.split(" ").length;
         }
+        return 0;
+    }
 
-        return wordCount;
+    public _getSelectionWordCount(editor: typeof window.activeTextEditor): number {
+        if (!editor) {
+            return 0;
+        }
+        let selection = editor.selection;
+        if (selection && !selection.isEmpty) {
+            let selectedText = editor.document.getText(selection);
+            return this._countWords(selectedText);
+        }
+        return 0;
+    }
+
+    public _getWholeWordCount(doc: TextDocument): number {
+        return this._countWords(doc.getText());
     }
 
     public dispose() {
